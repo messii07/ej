@@ -1,0 +1,119 @@
+Practical 6a
+Index.html
+<html>
+<head>
+<title>Currency Converter</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<form action="CCServlet">
+Enter Amount: <input type="text" name="amt"><br>
+Select Conversion Type<br>
+<input type="Radio" name="type" value="r2d" checked>Rupee to Dollar
+<input type="Radio" name="type" value="d2r">Dollar to Rupee<br>
+<input type="Reset"><br><input type="submit" value="Convert">
+</form>
+</body>
+</html>
+
+
+CCBean.java
+
+
+/*
+* To change this license header, choose License Headers in Project Properties.
+* To change this template file, choose Tools | Templates
+* and open the template in the editor.
+*/
+package mybean;
+import javax.ejb.Stateless;
+@Stateless
+public class CCBean implements CCBeanLocal {
+ @Override
+public double r2Dollar(double r)
+{
+return r/65.65;
+}
+@Override
+public double d2Rupee(double d)
+{
+return d*65.65;
+}
+}
+
+
+CCServlet.java
+
+
+package mypack;
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ejb.EJB;
+import mybean.CCBeanLocal;
+public class CCServlet extends HttpServlet {
+ @EJB
+ CCBeanLocal obj;
+ @Override
+ protected void doGet(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ // Set content type
+ response.setContentType("text/html;charset=UTF-8");
+ try (PrintWriter out = response.getWriter()) {
+ // Fetch the amount entered by user
+ String amtStr = request.getParameter("amt");
+ double amt = 0;
+
+ // Error handling for parsing input
+ try {
+ amt = Double.parseDouble(amtStr);
+ } catch (NumberFormatException e) {
+ out.println("<h1>Invalid amount entered: " + amtStr + "</h1>");
+ return;
+ }
+ // Check for null bean instance (ensure EJB is injected)
+ if (obj == null) {
+ out.println("<h1>Error: EJB injection failed!</h1>");
+ return;
+ }
+ // Determine conversion type and perform conversion
+ String conversionType = request.getParameter("type");
+ if ("r2d".equals(conversionType)) {
+ out.println("<h1>" + amt + " Rupee = " + obj.r2Dollar(amt) + " Dollar</h1>");
+ } else if ("d2r".equals(conversionType)) {
+ out.println("<h1>" + amt + " Dollar = " + obj.d2Rupee(amt) + " Rupee</h1>");
+ } else {
+ out.println("<h1>Invalid conversion type!</h1>");
+ }
+ } catch (Exception e) {
+ // Handle any unexpected exceptions and print them on the page
+ response.getWriter().println("<h1>Error: " + e.getMessage() + "</h1>");
+ }
+ }
+ @Override
+ protected void doPost(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ // Handle POST request by calling doGet
+ doGet(request, response);
+ }
+ @Override
+ public String getServletInfo() {
+ return "Currency Converter Servlet";
+ }
+}
+
+CCBeanLocal.java
+
+
+package mybean;
+import javax.ejb.Local;
+@Local
+public interface CCBeanLocal
+{
+public double r2Dollar(double r);
+public double d2Rupee(double d);
+}

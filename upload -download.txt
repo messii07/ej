@@ -1,0 +1,84 @@
+index.jsp:-
+
+<html>
+<head>
+<metahttp-equiv="Content-Type"content="text/html;charset=UTF-8">
+<title>DownloadFile</title>
+</head>
+<body>
+<h1>File DownloadApp</h1>
+Click<ahref="DownloadServlet?filename=SampleChapter.pdf">SampleChapter</a>
+<br/><br/>
+Click<ahref="DownloadServlet?filename=TOC.pdf">TableOfContents</a>
+</body>
+</html>
+
+DownloadServlet.java:-
+
+importjava.io.*;
+import javax.servlet.*;importjavax.servlet.http.*;
+publicclassDownloadServletextendsHttpServlet
+{
+public void doGet(HttpServletRequestreq,HttpServletResponse res)throwsIOException,ServletException
+{
+res.setContentType("APPLICATION/OCTET-STREAM");String filename = req.getParameter("filename");ServletContextcontext =getServletContext();
+InputStreamis=context.getResourceAsStream("/"+filename);ServletOutputStreamos= res.getOutputStream();
+res.setHeader("Content-Disposition","attachment;filename=\""+filename+"\"");int i;
+byte b[]=new byte[1024];while((i=is.read(b))!=-1)
+{
+os.write(b);
+}
+is.close();
+os.close();
+}
+}
+
+======================================
+
+index.jsp:-
+<%@pagecontentType="text/html"pageEncoding="UTF-8"%> 
+<!DOCTYPE html>
+<html>
+<head>
+<metahttp-equiv="Content-Type"content="text/html;charset=UTF-8">
+<title>FileUpload</title>
+</head>
+<body>
+<form action="UploadServlet" method="post" enctype="multipart/form-data">SelectFileTo Upload:-<input type="file"name="f1">
+Destination:-<inputtype="text"value="/tmp"name="destination">
+<br>
+<inputtype="submit"value="Upload File"name="Upload">
+</form>
+</body>
+</html>
+
+UploadServlet.java:-
+
+
+import java.io.*;importjavax.servlet.*;
+import javax.servlet.annotation.MultipartConfig;importjavax.servlet.http.*;
+@MultipartConfig
+publicclassUploadServletextendsHttpServlet
+{
+public void doPost(HttpServletRequestreq,HttpServletResponse res)throwsIOException,ServletException
+{
+res.setContentType("text/html");PrintWriterout=res.getWriter();
+Stringpath=req.getParameter("destination");PartfilePart =req.getPart("f1");
+String sfilePart = req.getPart("f1").toString();out.print("<br>FilePart:"+sfilePart);
+String filename = filePart.getName().toString();out.print("<br><br><hr> File Name:- "+filename);OutputStreamos=null;
+InputStream is=null;try
+{
+os=new FileOutputStream(new File(path+File.separator+filename));is=filePart.getInputStream();
+intread=0;
+byte[] b=new byte[1024];while((read=is.read(b))!=-1)
+{
+os.write(b,0,read);
+}
+out.println("<br>fileuploadedsuccessfully...!!!");
+}
+catch(FileNotFoundExceptione)
+{
+out.print(e);
+}
+}
+}

@@ -1,0 +1,151 @@
+Practical 7b
+Index.jsp
+<%@page import="javax.jms.JMSException"%>
+<%@page import="javax.naming.InitialContext"%>
+<%@page import="javax.jms.Connection"%>
+<%@page import="javax.jms.TextMessage"%>
+<%@page import="javax.jms.MessageProducer"%>
+<%@page import="javax.jms.Session"%>
+<%@page import="javax.jms.Queue"%>
+<%@page import="javax.jms.ConnectionFactory"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+ <title>JSP Page</title>
+</head>
+<body>
+ Welcome to My Home Page
+ <%
+ Connection connection = null;
+ Session mySession = null;
+ MessageProducer messageProducer = null;
+ TextMessage message = null;
+ try {
+ InitialContext ic = new InitialContext();
+ Queue queue = (Queue) ic.lookup("jms/Queue");
+ ConnectionFactory connectionFactory = (ConnectionFactory)
+ic.lookup("jms/QueryFactory");
+ connection = connectionFactory.createConnection();
+ mySession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+ messageProducer = mySession.createProducer(queue);
+ String remoteAddr = request.getRemoteAddr();
+ message = mySession.createTextMessage();
+ message.setText(remoteAddr);
+ messageProducer.send(message);
+ out.print("Message sent to JMS queue: " + remoteAddr);
+ } catch (JMSException e) {
+ e.printStackTrace();
+ out.print("JMS Exception: " + e.getMessage());
+ } finally {
+ try {
+ if (messageProducer != null) messageProducer.close();
+ if (mySession != null) mySession.close();
+ if (connection != null) connection.close();
+ } catch (JMSException e) {
+ e.printStackTrace();
+ }
+ }
+ %>
+ </body>
+</html>
+BasicMessageBean.java
+package ejb;
+import javax.annotation.Resource;
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.EJB;
+import javax.ejb.MessageDriven;
+import javax.ejb.MessageDrivenContext;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.TextMessage;
+@MessageDriven(activationConfig = {
+ @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue =
+"jms/Queue"),
+ @ActivationConfigProperty(propertyName = "destinationType", propertyValue =
+"javax.jms.Queue")
+})
+public class BasicMessageBean implements MessageListener {
+ @EJB
+ private VisitorStatBean vs;
+ @Resource
+ private MessageDrivenContext mdc;
+ @Override
+ public void onMessage(Message message) {
+ try {
+ if (message instanceof TextMessage) {
+ TextMessage msg = (TextMessage) message;
+ vs.addVisitor(msg.getText());
+ }
+ } catch (JMSException e) {
+ mdc.setRollbackOnly();
+ e.printStackTrace();
+ }
+ }
+}
+VisitorStatBean
+package ejb;
+import java.sql.*;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ejb.Stateless;
+@Stateless
+public class VisitorStatBean {
+ private Connection conn = null;
+ private PreparedStatement psInsert = null;
+ private PreparedStatement psUpdate = null;
+ @PostConstruct
+ public void connect() {
+ try {
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
+ conn = DriverManager.getConnection("jdbc:derby://localhost:1527/Practical7b",
+"root", "root");
+ // Prepare SQL statements
+ psInsert = conn.prepareStatement("INSERT INTO userstat (hostname, visits,
+firstvisitdt) VALUES (?, 1, CURRENT_TIMESTAMP)");
+ psUpdate = conn.prepareStatement("UPDATE userstat SET visits = visits + 1,
+firstvisitdt = CURRENT_TIMESTAMP WHERE hostname = ?");
+ } catch (Exception e) {
+ e.printStackTrace();
+ }
+ }
+ @PreDestroy
+ public void disconnect() {
+ try {
+ if (psInsert != null) psInsert.close();
+ if (psUpdate != null) psUpdate.close();
+ if (conn != null) conn.close();
+ } catch (SQLException e) {
+ e.printStackTrace();
+ }
+ }
+ public void addVisitor(String host) {
+ try {
+ if (host == null || host.isEmpty()) {
+ host = "Unknown";
+ }
+ // Check if the visitor already exists
+ PreparedStatement psCheck = conn.prepareStatement("SELECT COUNT(*) FROM
+userstat WHERE hostname = ?");
+ psCheck.setString(1, host);
+ ResultSet rs = psCheck.executeQuery();
+ rs.next();
+ int count = rs.getInt(1);
+ rs.close();
+ psCheck.close();
+ if (count > 0) {
+ // Update existing record
+ psUpdate.setString(1, host);
+ psUpdate.executeUpdate();
+ } else {
+ // Insert new record
+ psInsert.setString(1, host);
+ psInsert.executeUpdate();
+ }
+ } catch (SQLException e) {
+ e.printStackTrace();
+ }
+ }
+}

@@ -1,0 +1,124 @@
+Practical 4c
+Index.html
+<!DOCTYPE html>
+<html>
+<head>
+ <title>New User Registration Page</title>
+</head>
+<body>
+ <h1>New User Registration Page</h1>
+ <form action="Register.jsp" method="post">
+ Enter User Name: <input type="text" name="txtName" required><br>
+ Enter Password: <input type="password" name="txtPass1" required><br>
+ Re-Enter Password: <input type="password" name="txtPass2" required><br>
+ Enter Email: <input type="email" name="txtEmail" required><br>
+ Enter Country Name:
+ <select name="txtCon" required>
+ <option>India</option>
+ <option>France</option>
+ <option>England</option>
+ <option>Argentina</option>
+ </select><br>
+ <input type="submit" value="REGISTER">
+ <input type="reset">
+ </form>
+ <form action="login.html">
+ <input type="submit" value="Login">
+ </form>
+</body>
+</html>
+Login.html
+<!DOCTYPE html>
+<html>
+<head>
+ <title>Login Page</title>
+</head>
+<body>
+ <h1>Login Page</h1>
+ <form action="Login.jsp" method="post">
+ Enter User Name: <input type="text" name="txtName" required><br>
+ Enter Password: <input type="password" name="txtPass" required><br>
+ <input type="submit" value="LOGIN">
+ <input type="reset">
+ </form>
+</body>
+</html>
+Login.jsp
+<%@page contentType="text/html" import="java.sql.*"%>
+<!DOCTYPE html>
+<html>
+<head>
+ <title>Login Page</title>
+</head>
+<body>
+ <h1>Login JSP Page</h1>
+ <%
+ String uname = request.getParameter("txtName");
+ String pass = request.getParameter("txtPass");
+ ResultSet rs = null;
+ try {
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+ Connection con = DriverManager.getConnection("jdbc:derby://localhost:1527/Practical4c",
+"root", "root");
+ PreparedStatement stmt = con.prepareStatement("SELECT password FROM Registration
+WHERE username=?");
+ stmt.setString(1, uname);
+ rs = stmt.executeQuery();
+ if (rs.next()) {
+ if (pass.equals(rs.getString(1))) {
+ out.println("<h1>LOGIN SUCCESSFUL</h1>");
+ } else {
+ out.println("<h1>Password does not match!</h1>");
+ }
+ } else {
+ out.println("<h1>User does not exist!</h1>");
+ }
+ } catch (Exception e) {
+ out.println("<h1>Error: " + e.getMessage() + "</h1>");
+ }
+ %>
+ <a href="Register.jsp">Go to Registration Page</a>
+</body>
+</html>
+Register.jsp
+<%@page contentType="text/html" import="java.sql.*"%>
+<!DOCTYPE html>
+<html>
+<head>
+ <title>Registration Page</title>
+</head>
+<body>
+ <h1>Registration JSP Page</h1>
+ <%
+ String uname = request.getParameter("txtName");
+ String pass1 = request.getParameter("txtPass1");
+ String pass2 = request.getParameter("txtPass2");
+ String email = request.getParameter("txtEmail");
+ String ctry = request.getParameter("txtCon");
+ if (pass1 != null && pass1.equals(pass2)) {
+ try {
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+ Connection con = DriverManager.getConnection("jdbc:derby://localhost:1527/Practical4c",
+"root", "root");
+ PreparedStatement stmt = con.prepareStatement("INSERT INTO Registration (username,
+password, email, country) VALUES (?, ?, ?, ?)");
+ stmt.setString(1, uname);
+ stmt.setString(2, pass1);
+ stmt.setString(3, email);
+ stmt.setString(4, ctry);
+ int row = stmt.executeUpdate();
+ if (row == 1) {
+ out.println("<h1>Registration Successful</h1>");
+ } else {
+ out.println("<h1>Registration FAILED!</h1>");
+ }
+ } catch (Exception e) {
+ out.println("<h1>Error: " + e.getMessage() + "</h1>");
+ }
+ } else {
+ out.println("<h1>Password Mismatch</h1>");
+ }
+ %>
+ <a href="Login.html">Go to Login Page</a>
+</body>
+</html>

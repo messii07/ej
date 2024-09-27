@@ -1,0 +1,119 @@
+Practical 9a
+Index.jsp
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>User View</title>
+</head>
+<body>
+<form action="UserView.jsp" >
+User Name:- <input type="text" name="uname" maxlength="20"><br>
+User Type:- <input type="text" name="utype" maxlength="35">
+<br><input type="submit" value="submit">
+</form>
+</body>
+</html>
+UserView.jsp
+<%@page import="hibernate.Userdetails"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page import="org.hibernate.SessionFactory"%>
+<%@page import="org.hibernate.Session"%>
+<%@page import="org.hibernate.cfg.Configuration"%>
+<%@page import="org.hibernate.Transaction"%>
+<%@page import="java.util.List"%>
+<%@page import="java.util.Iterator"%>
+<%
+ SessionFactory sf = new Configuration().configure().buildSessionFactory();
+ Session ss = sf.openSession();
+ Transaction tx = null;
+ try {
+ tx = ss.beginTransaction();
+ String uname = request.getParameter("uname");
+ String utype = request.getParameter("utype");
+ if (uname != null && utype != null) {
+ // Find the max uid and increment it
+ Integer maxUid = (Integer) ss.createQuery("SELECT max(uid) FROM
+Userdetails").uniqueResult();
+ int newUid = (maxUid != null ? maxUid : 0) + 1;
+ Userdetails us = new Userdetails();
+ us.setUid(newUid);
+ us.setUname(uname);
+ us.setUtype(utype);
+ ss.save(us);
+ tx.commit();
+ out.print("User details entered successfully!!");
+ }
+ } catch (Exception e) {
+ if (tx != null) tx.rollback();
+ out.println("Error while adding user details: " + e.getMessage());
+ }
+ List<Userdetails> ubook = null;
+ try {
+ ubook = ss.createQuery("from Userdetails").list();
+ } catch (Exception e) {
+ out.println("Error while retrieving user details: " + e.getMessage());
+ } finally {
+ if (ss != null && ss.isOpen()) ss.close();
+ if (sf != null) sf.close();
+ }
+%>
+<html>
+<head>
+ <title>User View</title>
+</head>
+<body>
+ User View<br>
+ Click here to go <a href="index.jsp"> BACK </a>
+ <br><br>
+ <%
+ if (ubook != null && !ubook.isEmpty()) {
+ Iterator<Userdetails> it = ubook.iterator();
+ while (it.hasNext()) {
+ Userdetails eachrecord = it.next();
+ out.print(eachrecord.getUid() + " ");
+ out.print(eachrecord.getUname() + "<br>");
+ out.print(eachrecord.getUtype() + "<br><hr>");
+ }
+ } else {
+ out.print("No records found.");
+ }
+ %>
+</body>
+</html>
+Userdetails.java
+package hibernate;
+public class Userdetails implements java.io.Serializable {
+ private int uid;
+ private String uname;
+ private String utype;
+ public Userdetails() {
+ }
+ public Userdetails(int uid) {
+ this.uid = uid;
+ }
+ public Userdetails(int uid, String uname, String utype) {
+ this.uid = uid;
+ this.uname = uname;
+ this.utype = utype;
+ }
+ public int getUid() {
+ return this.uid;
+ }
+ public void setUid(int uid) {
+ this.uid = uid;
+ }
+ public String getUname() {
+ return this.uname;
+ }
+ public void setUname(String uname) {
+ this.uname = uname;
+ }
+ public String getUtype() {
+ return this.utype;
+ }
+ public void setUtype(String utype) {
+ this.utype = utype;
+ }
+}

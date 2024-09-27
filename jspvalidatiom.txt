@@ -1,0 +1,131 @@
+Practical 4b
+Index.html
+<html>
+ <head>
+ <title>Practical 4b</title>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ </head>
+ <body>
+ <form action="validate.jsp">
+ Name: <input type="text" name="name" value="" /> <br>
+ Age: <input type="text" name="Age" value="" /> <br>
+ Hobbies: <br>
+ <input type="checkbox" name="hob" value="Singing" /> Singing
+ <input type="checkbox" name="hob" value="Reading" /> Reading
+ <input type="checkbox" name="hob" value="Sleeping" /> Sleeping
+ <input type="checkbox" name="hob" value="Dancing" /> Dancing
+ <br>Email: <input type="text" name="email" />
+ <br>Select Gender:
+ <input type="radio" name="gender" value="male" /> Male
+ <input type="radio" name="gender" value="female" /> Female
+ <input type="radio" name="gender" value="other" /> Other
+ <input type="hidden" name="error" value="" />
+ <br><input type="submit" value="Submit" />
+ </form>
+ </body>
+</html>
+
+
+Validate.jsp
+
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+ <title>Validation Page</title>
+</head>
+<body>
+ <%
+ String name = request.getParameter("name");
+ String agestr = request.getParameter("Age"); // Ensure correct case
+ String[] hobbies = request.getParameterValues("hob");
+ String email = request.getParameter("email");
+ String gender = request.getParameter("gender");
+
+ String errormessage = "";
+ boolean hasErrors = false;
+ // Name Validation
+ if (name == null || name.trim().isEmpty()) {
+ errormessage += "Name is required.<br>";
+ hasErrors = true;
+ }
+ // Age Validation
+ int age = 0;
+ try {
+ age = Integer.parseInt(agestr);
+ if (age <= 0) {
+ errormessage += "Age should be positive.<br>";
+ hasErrors = true;
+ }
+ } catch (NumberFormatException e) {
+ errormessage += "Age must be a valid number.<br>";
+ hasErrors = true;
+ }
+ // Email Validation
+ if (email == null || email.trim().isEmpty()) {
+ errormessage += "Email is required.<br>";
+ hasErrors = true;
+ } else if (!email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+ errormessage += "Invalid email format.<br>";
+ hasErrors = true;
+ }
+ // Gender Validation
+ if (gender == null || gender.trim().isEmpty()) {
+ errormessage += "Gender is required.<br>";
+ hasErrors = true;
+ }
+ // Error Handling
+ if (hasErrors) {
+ request.setAttribute("errorMessage", errormessage);
+ request.getRequestDispatcher("validate.jsp").forward(request, response);
+ } else {
+ request.setAttribute("name", name);
+ request.setAttribute("age", age);
+ request.setAttribute("hobbies", hobbies);
+ request.setAttribute("email", email);
+ request.setAttribute("gender", gender);
+ request.getRequestDispatcher("result.jsp").forward(request, response);
+ }
+ %>
+</body>
+</html>
+
+
+Result.jsp
+
+
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+ <title>Results</title>
+</head>
+<body>
+ <h1>Form Submission Results</h1>
+ <%
+ String name = (String) request.getAttribute("name");
+ Integer age = (Integer) request.getAttribute("age");
+ String[] hobbies = (String[]) request.getAttribute("hobbies");
+ String email = (String) request.getAttribute("email");
+ String gender = (String) request.getAttribute("gender");
+ if (name != null) {
+ out.println("Name: " + name + "<br>");
+ out.println("Age: " + age + "<br>");
+ out.println("Email: " + email + "<br>");
+ out.println("Gender: " + gender + "<br>");
+ out.print("Hobbies: ");
+ if (hobbies != null) {
+ for (String hobby : hobbies) {
+ out.print(hobby + " ");
+ }
+ }
+ out.println("<br>");
+ } else {
+ out.println("No data received.");
+ }
+ %>
+</body>
+</html>

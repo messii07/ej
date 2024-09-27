@@ -1,0 +1,91 @@
+Practical 8
+index.jsp
+<%@page import="ejb.MarksEntryBean"%>
+<%@page import="javax.naming.InitialContext"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<%!
+ private static MarksEntryBean obj;
+ public void jspInit() {
+ try {
+ InitialContext ic = new InitialContext();
+ obj = (MarksEntryBean) ic.lookup("java:global/Practical8/MarksEntryBean");
+ } catch (Exception e) {
+ e.printStackTrace();
+ }
+ }
+%>
+<%
+ if (request.getParameter("InsertMarks") != null) {
+ try {
+ String sname = request.getParameter("sname");
+ int marks1 = Integer.parseInt(request.getParameter("m1"));
+ int marks2 = Integer.parseInt(request.getParameter("m2"));
+ int marks3 = Integer.parseInt(request.getParameter("m3"));
+ obj.addMarks(sname, marks1, marks2, marks3);
+ out.print("Marks entered successfully..!!!!");
+ } catch (NumberFormatException e) {
+ out.print("Invalid marks input. Please enter valid integers.");
+ }
+ }
+%>
+<html>
+ <head>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+ <title>JSP Page</title>
+ </head>
+ <body>
+ <h2>Enter Details</h2>
+ <form name="result" method="post">
+ Enter student's name: <input type='text' name="sname" /><br>
+ Enter subject 1 marks: <input type='text' name="m1" /><br>
+ Enter subject 2 marks: <input type='text' name="m2" /><br>
+ Enter subject 3 marks: <input type='text' name="m3" /><br>
+ <input type='submit' name="InsertMarks" value="Submit" /><br>
+ </form>
+ </body>
+</html>
+MarksEntryBean.java
+package ejb;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import javax.ejb.Stateful;
+@Stateful
+public class MarksEntryBean {
+ private Connection con = null;
+ private PreparedStatement psInsert = null;
+ public void addMarks(String sname, int m1, int m2, int m3) {
+ try {
+ // Load JDBC driver
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+ // Establish database connection
+ con = DriverManager.getConnection("jdbc:derby://localhost:1527/Practical8", "root",
+"root");
+ // Prepare and execute SQL statement
+ String query = "INSERT INTO marks (sname, marks1, marks2, marks3) VALUES (?, ?, ?, ?)";
+ psInsert = con.prepareStatement(query);
+ psInsert.setString(1, sname);
+ psInsert.setInt(2, m1);
+ psInsert.setInt(3, m2);
+ psInsert.setInt(4, m3);
+ int rowsAffected = psInsert.executeUpdate();
+ if (rowsAffected > 0) {
+ System.out.println("Marks entered successfully!!");
+ } else {
+ System.out.println("No rows affected.");
+ }
+ } catch (Exception e) {
+ e.printStackTrace();
+ } finally {
+ // Close resources
+ try {
+ if (psInsert != null) psInsert.close();
+ if (con != null) con.close();
+ } catch (SQLException e) {
+ e.printStackTrace();
+ }
+ }
+ }
+}

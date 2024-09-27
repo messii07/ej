@@ -1,0 +1,136 @@
+Practical 6b
+Index.html
+<!DOCTYPE html>
+<html>
+ <head>
+ <title>Room Reservation System</title>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ </head>
+ <body>
+ <form action="RoomClient" method="post">
+ No of Rooms: <input type="text" name="t1">
+ <input type="submit" name="btn" value="CheckIN">
+ <input type="submit" name="btn" value="CheckOUT">
+ </form>
+ </body>
+</html>
+RoomBean.java
+package ejb;
+import java.sql.*;
+import javax.ejb.Stateless;
+@Stateless
+public class RoomBean implements RoomBeanLocal {
+ @Override
+ public int checkin(int no) {
+ try {
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+ Connection con =
+DriverManager.getConnection("jdbc:derby://localhost:1527/Practical 6b ", "root", "root");
+ String sql1 = "select * from room";
+ Statement st = con.createStatement();
+ ResultSet rs = st.executeQuery(sql1);
+ rs.next();
+ int total = rs.getInt(1);
+ int occ = rs.getInt(2);
+ int free = total - occ;
+ System.out.println(total);
+ System.out.println(free);
+ if (free >= no) {
+ String sql2 = "update room set occ=?";
+ PreparedStatement ps = con.prepareStatement(sql2);
+ ps.setInt(1, occ + no);
+ int rse = ps.executeUpdate();
+ return rse;
+ } else {
+ return 0;
+ }
+ } catch (Exception e) {
+ return 0;
+ }
+ }
+ @Override
+ public int checkout(int no) {
+ try {
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+ Connection con =
+DriverManager.getConnection("jdbc:derby://localhost:1527/Practical 6b ", "root", "root");
+ String sql1 = "select * from room";
+ Statement st = con.createStatement();
+ ResultSet rs = st.executeQuery(sql1);
+ rs.next();
+ int total = rs.getInt(1);
+ int occ = rs.getInt(2);
+ if (occ >= 0) {
+ String sql2 = "update room set occ=?";
+ PreparedStatement ps = con.prepareStatement(sql2);
+ ps.setInt(1, occ - no);
+ int rse = ps.executeUpdate();
+ return rse;
+ } else {
+ return 0;
+ }
+ } catch (Exception e)
+ {
+ return 0;
+ }
+ }
+}
+
+RoomBeanLocal.java
+package ejb;
+import javax.ejb.Local;
+@Local
+public interface RoomBeanLocal {
+ int checkin(int no);
+ int checkout(int no);
+}
+RoomClient.java
+package mypack;
+import ejb.RoomBeanLocal;
+import java.io.*;
+import javax.ejb.EJB;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
+@WebServlet(name = "RoomClient", urlPatterns = {"/RoomClient"})
+public class RoomClient extends HttpServlet {
+ @EJB
+ RoomBeanLocal obj;
+ @Override
+ protected void doPost(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ response.setContentType("text/html");
+ PrintWriter out = response.getWriter();
+ try {
+ int no = Integer.parseInt(request.getParameter("t1"));
+ String action = request.getParameter("btn");
+ int result = 0;
+ if ("CheckIN".equals(action)) {
+ result = obj.checkin(no);
+ if (result == 1) {
+ out.println("<h1>" + no + " rooms checked in successfully.</h1>");
+ } else {
+ out.println("<h1>Failed to check in " + no + " rooms. Not enough available rooms.</h1>");
+ }
+ } else if ("CheckOUT".equals(action)) {
+ result = obj.checkout(no);
+ if (result == 1) {
+ out.println("<h1>" + no + " rooms checked out successfully.</h1>");
+ } else {
+ out.println("<h1>Failed to check out " + no + " rooms. Check-out not possible.</h1>");
+ }
+ } else {
+ out.println("<h1>Invalid action.</h1>");
+ }
+ } catch (NumberFormatException e) {
+ out.println("<h1>Invalid number format. Please enter a valid number of rooms.</h1>");
+ } finally {
+ out.close();
+ }
+ }
+ @Override
+ public String getServletInfo() {
+ return "Room Client Servlet";
+ }
+}

@@ -1,0 +1,57 @@
+index.html:-
+
+<html>
+<head><title>Cookie Demo</title></head>
+<body>
+<form action="Page1" >
+Enter Your Name <input type="text" name="txtName"><br>
+<input type="submit" value="~~~ Click to Enter ~~~">
+</form>
+</body>
+</html>
+
+CookieServlet.java
+package mypack;
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+public class CookieServlet extends HttpServlet {
+ static int i = 1;
+ protected void processRequest(HttpServletRequest request, HttpServletResponse
+response)
+ throws ServletException, IOException {
+ response.setContentType("text/html;charset=UTF-8");
+ try (PrintWriter out = response.getWriter())
+ {
+ String k = String.valueOf(i);
+ Cookie c = new Cookie( "Visit", k);
+ int j = Integer.parseInt(c.getValue());
+ if (j == 1) {
+ out.println("You are visiting this page for the first time");
+ } else {
+ synchronized (this) {
+ out.println("you visited this page" + i + " times");
+ }
+ }
+ i++;
+ }
+ }
+ @Override
+ protected void doGet(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ processRequest(request, response);
+ }
+ @Override
+ protected void doPost(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ processRequest(request, response);
+ }
+ @Override
+ public String getServletInfo() {
+ return "Short description";
+ }
+}

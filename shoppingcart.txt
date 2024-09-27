@@ -1,0 +1,163 @@
+Practical 6c
+
+
+index.jsp
+
+<%@ page import="java.util.List, javax.naming.InitialContext,
+javax.naming.NamingException, ejb.ShoppingCart" %>
+<%@ page contentType="text/html" pageEncoding="UTF-8" %>
+<!DOCTYPE html>
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+ <title>Shopping Cart</title>
+</head>
+<body style="background-color: pink;">
+ <h1 style="text-align: center;">Books For Sale</h1><br>
+ <form method="post">
+ Customer Name: <input type="text" name="txtCustomerName" value="<%=
+request.getParameter("txtCustomerName") != null ?
+request.getParameter("txtCustomerName") : "" %>" /><br>
+ <b>Book Titles</b><br>
+ <input type="checkbox" name="chkBook" value="Struts 2.0 For Beginners">Struts 2.0
+For Beginners<br>
+ <input type="checkbox" name="chkBook" value="Oracle 11g For Professionals">Oracle
+11g For Professionals<br>
+ <input type="checkbox" name="chkBook" value="Hibernate 3 For
+Beginners">Hibernate 3 For Beginners<br>
+ <input type="checkbox" name="chkBook" value="Java Persistence API In EJB 3 For
+Beginners">Java Persistence API In EJB 3 For Beginners<br>
+ <br>
+ <input type='submit' value='Add To My Basket' name='btnAddBook'>
+ <input type='submit' value='Remove From My Basket'
+name='btnRmvBook'><br><br><br>
+ <%
+ ShoppingCart cart = null;
+ try {
+ InitialContext ic = new InitialContext();
+ cart = (ShoppingCart) ic.lookup("java:global/Practical_6c/ShoppingCart");
+ } catch (NamingException e) {
+ e.printStackTrace();
+ }
+ if (cart != null) {
+ String customerName = request.getParameter("txtCustomerName");
+ if (customerName != null && !customerName.trim().isEmpty()) {
+ cart.initialize(customerName);
+ } else {
+ cart.initialize("Guest");
+ }
+ if (request.getParameter("btnRmvBook") != null) {
+ String[] books = request.getParameterValues("chkBook");
+ if (books != null) {
+ for (String book : books) {
+ cart.removeBook(book);
+ }
+ }
+ }
+ if (request.getParameter("btnAddBook") != null) {
+ String[] books = request.getParameterValues("chkBook");
+ if (books != null) {
+ for (String book : books) {
+ cart.addBook(book);
+ }
+ }
+ }
+ List<String> bookList = cart.getContents();
+ out.print("<b>Basket</b><br>");
+ for (String title : bookList) {
+ out.print(title + "<br>");
+ }
+ } else {
+ out.print("ShoppingCart bean is not initialized.");
+ }
+ %>
+ </form>
+</body>
+</html>
+
+
+ShoppingCart.java
+
+
+package ejb;
+import javax.ejb.Singleton;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ejb.Remove;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+@Singleton
+public class ShoppingCart {
+ private List<String> contents;
+ private String customerName;
+ private Connection conn;
+ private Statement stmt;
+ @PostConstruct
+ private void init() {
+ contents = new ArrayList<>();
+ try {
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+ conn = DriverManager.getConnection("jdbc:derby://localhost:1527/Practical6c",
+"root", "root");
+ } catch (Exception e) {
+ e.printStackTrace();
+ }
+ }
+ public void initialize(String person) {
+ this.customerName = (person != null) ? person : "Guest";
+ contents.clear();
+ // You may want to initialize the contents from the database here
+ }
+ public void addBook(String title) {
+ try {
+ stmt = conn.createStatement();
+ String query = "INSERT INTO cart (UserName, ItemName) VALUES('" + customerName
++ "','" + title + "')";
+ stmt.executeUpdate(query);
+ } catch (SQLException e) {
+ e.printStackTrace();
+ }
+ }
+ public void removeBook(String title) {
+ try {
+ stmt = conn.createStatement();
+ String query = "DELETE FROM cart WHERE UserName='" + customerName + "' AND
+ItemName='" + title + "'";
+ stmt.executeUpdate(query);
+ } catch (SQLException e) {
+ e.printStackTrace();
+ }
+ }
+ public List<String> getContents() {
+ List<String> list = new ArrayList<>();
+ try {
+ stmt = conn.createStatement();
+ String query = "SELECT ItemName FROM cart WHERE UserName='" + customerName
++ "'";
+ ResultSet rs = stmt.executeQuery(query);
+ while (rs.next()) {
+ list.add(rs.getString("ItemName"));
+ }
+ } catch (SQLException e) {
+ e.printStackTrace();
+ }
+ return list;
+ }
+ @PreDestroy
+ private void cleanup() {
+ try {
+ if (conn != null) conn.close();
+ } catch (SQLException e) {
+ e.printStackTrace();
+ }
+ }
+ @Remove
+ public void remove() {
+ contents = null;
+ }
+}

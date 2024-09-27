@@ -1,0 +1,152 @@
+Practical 3b
+index.html
+<html>
+ <head>
+ <title>Practical 3b</title>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ </head>
+ <body>
+ <h1>Welcome to Quiz Servlet </h1>
+ <h1><a href="QuizServlet" >CLICK TO START QUIZ</a></h1>
+ </body>
+</html>
+
+
+QuizServlet.java
+
+
+package mypack;
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+public class QuizServlet extends HttpServlet {
+ protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ response.setContentType("text/html;charset=UTF-8");
+ try (PrintWriter out = response.getWriter()) {
+ // Database connection setup
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+ Connection con = DriverManager.getConnection("jdbc:derby://localhost:1527/Practical3b",
+"root", "root");
+ Statement stmt = con.createStatement();
+ ResultSet res = stmt.executeQuery("SELECT * FROM quiz");
+
+ // HTML Form and Table
+ out.println("<form action='ShowResults' method='post'>");
+ out.println("<table border='1'>");
+
+ int qno = 0;
+ while (res.next()) {
+ qno++;
+ out.println("<tr><td>" + res.getString(1) + "</td>");
+ out.println("<td>" + res.getString(2) + "</td></tr>");
+ out.println("<tr><td><input type='radio' name='" + qno + "' value='" + res.getString(3) +
+"'></td><td>" + res.getString(3) + "</td></tr>");
+ out.println("<tr><td><input type='radio' name='" + qno + "' value='" + res.getString(4) +
+"'></td><td>" + res.getString(4) + "</td></tr>");
+ out.println("<tr><td><input type='radio' name='" + qno + "' value='" + res.getString(5) +
+"'></td><td>" + res.getString(5) + "</td></tr>");
+ out.println("<tr><td><input type='radio' name='" + qno + "' value='" + res.getString(6) +
+"'></td><td>" + res.getString(6) + "</td></tr>");
+ }
+
+ out.println("</table>");
+ out.println("<input type='reset' value='Reset'>");
+ out.println("<input type='submit' value='Submit'>");
+ out.println("</form>");
+ } catch (Exception e) {
+ // Print the stack trace to the client
+ e.printStackTrace(new PrintWriter(response.getWriter()));
+ }
+ }
+ @Override
+ protected void doGet(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ processRequest(request, response);
+ }
+ @Override
+ protected void doPost(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ processRequest(request, response);
+ }
+ @Override
+ public String getServletInfo() {
+ return "QuizServlet";
+ }
+
+
+
+ShowResult.java
+
+
+package mypack;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+public class ShowResults extends HttpServlet {
+ protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ response.setContentType("text/html;charset=UTF-8");
+ try (PrintWriter out = response.getWriter()) {
+ // Database connection setup
+ try {
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+ Connection con = DriverManager.getConnection("jdbc:derby://localhost:1527/Practical3b",
+"root", "root");
+ Statement stmt = con.createStatement();
+ ResultSet res = stmt.executeQuery("SELECT ans FROM quiz");
+
+ int count = 0;
+ int qno = 0;
+
+ while (res.next()) {
+ qno++;
+ String correctAnswer = res.getString("ans");
+ String userAnswer = request.getParameter(String.valueOf(qno));
+
+ if (correctAnswer != null && correctAnswer.equals(userAnswer)) {
+ count++;
+ out.println("<h1>Question " + qno + ": Correct</h1>");
+ } else {
+ out.println("<h1>Question " + qno + ": Incorrect</h1>");
+ }
+ }
+
+ out.println("<h1>Your Score is: " + count + "</h1>");
+ } catch (Exception e) {
+ e.printStackTrace();
+ response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An error
+occurred while processing your request.");
+ }
+ }
+ }
+ @Override
+ protected void doGet(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ processRequest(request, response);
+ }
+ @Override
+ protected void doPost(HttpServletRequest request, HttpServletResponse response)
+ throws ServletException, IOException {
+ processRequest(request, response);
+ }
+ @Override
+ public String getServletInfo() {
+ return "Servlet to process quiz results";
+ }
+}

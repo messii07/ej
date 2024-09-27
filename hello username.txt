@@ -1,0 +1,74 @@
+Practical 1b
+
+
+Index.html
+<html>
+<head>
+<title>LoginPage</title>
+<metacharset="UTF-8">
+<metaname="viewport"content="width=device-width,initial-scale=1.0">
+</head>
+<body>
+<formmethod="POST"action="LoginServlet">
+	username:<inputtype="text"name="uname">
+	password:<inputtype="password"name="pw">
+	<br>
+	<inputtype="submit"name="btn"value="login">
+</form>
+</body>
+</html>
+
+
+LoginServlet.java
+
+
+packagemypack;
+
+
+importjava.io.IOException; import java.io.PrintWriter;
+importjavax.servlet.ServletException; import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest; importjavax.servlet.http.HttpServletResponse;
+ 
+publicclassLoginServletextendsHttpServlet{
+
+
+
+protectedvoidprocessRequest(HttpServletRequestrequest,HttpServletResponse response)
+throws ServletException, IOException { response.setContentType("text/html;charset=UTF-8"); try (PrintWriter out = response.getWriter())
+{
+	Stringusername= request.getParameter("uname");
+	Stringpassword= request.getParameter("pw");
+	if((username.equals("admin"))&&(password.equals("pass")))
+	{
+	out.println("HelloAdmin");
+	}
+	else
+	{
+	out.print("LoginFailed");
+	}
+}
+}
+
+
+@Override
+protectedvoiddoGet(HttpServletRequestrequest,HttpServletResponseresponse) throws ServletException, IOException {
+processRequest(request,response);
+}
+
+
+@Override
+ 
+protectedvoiddoPost(HttpServletRequestrequest,HttpServletResponseresponse) throws ServletException, IOException
+{
+processRequest(request,response);
+
+
+}
+
+
+@Override
+publicStringgetServletInfo()
+{
+return"Shortdescription";
+}
+}

@@ -1,0 +1,48 @@
+Practical 4a:
+Index.html
+<html>
+ <head>
+ <title>Practical 4a</title>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ </head>
+ <body>
+ <form action="index.jsp">
+ Username: <input type="text" name="Name"> <!-- Fixed the name attribute -->
+ Email: <input type="text" name="Email">
+ <input type="submit">
+ </form>
+ </body>
+</html>
+
+
+Index.jsp
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+ <head>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+ <title>Practical 4a</title>
+ </head>
+ <body>
+ <h1>Request Object</h1>
+ Query String: <%= request.getQueryString() %> <br>
+ Context Path: <%= request.getContextPath() %><br>
+ Remote Host: <%= request.getRemoteHost() %><br>
+
+ 
+ <h1>Form Data</h1>
+ Name: <%= request.getParameter("Name") %> <br> <!-- Retrieve Name -->
+ Email: <%= request.getParameter("Email") %> <br> <!-- Retrieve Email -->
+
+ <h1>Response Object</h1><br>
+ Character Encoding: <%= response.getCharacterEncoding() %> <br>
+ Content Type: <%= response.getContentType() %> <br>
+ Locale: <%= response.getLocale() %><br>
+
+ <h1>Session Object</h1> <br>
+ ID: <%= session.getId() %> <br>
+ Creation Time: <%= new java.util.Date(session.getCreationTime()) %> <br>
+ Last Accessed Time: <%= new java.util.Date(session.getLastAccessedTime()) %> <br>
+ </body>
+</html>

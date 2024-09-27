@@ -1,0 +1,47 @@
+Practical 5a
+Index.html
+<html>
+ <body>
+ <form action="UpdateEmp.jsp" >
+ Enter Employee Number<input type="text" name="txtEno" ><br>
+ Enter Salary to update<input type="text" name="txtSal" ><br>
+ <input type="reset" ><input type="submit">
+ </form>
+ </body>
+</html>
+UpdateEmp
+<%@page contentType="text/html" import="java.sql.*" %>
+<html>
+ <body>
+ <h1>Updating Employee Record</h1>
+ <%
+ String eno = request.getParameter("txtEno");
+ String sal = request.getParameter("txtSal");
+ try {
+ Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+ Connection con
+ = DriverManager.getConnection("jdbc:derby://localhost:1527/Practical5a", "root",
+"root");
+ PreparedStatement stmt = con.prepareStatement("select * from emp where empno=?");
+ stmt.setString(1, eno);
+ ResultSet rs = stmt.executeQuery();
+ if (rs.next()) {
+ out.println("<h1> Employee " + rs.getString(2) + " Exist </h1>");
+ PreparedStatement pst = con.prepareStatement("update emp set salary=? where
+empno=?");
+ pst.setString(1, sal);
+ pst.setString(2, eno);
+ pst.executeUpdate();
+ out.println("<h1>Employee Record updated !!!!!</h1>");
+ }
+ else
+ {
+ out.println("<h1>Employee Record not exist !!!!!</h1>");
+ }
+
+ } catch (Exception e) {
+ out.println(e);
+ }
+ %>
+ </body>
+</html>
